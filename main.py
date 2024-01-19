@@ -25,19 +25,14 @@ if gpus:
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 
-
-
-#wypelnienie pustych rekordow
+#wypelnienie pustych rekordow zerami
 train["Arrival Delay in Minutes"].fillna(0, inplace=True) 
 test["Arrival Delay in Minutes"].fillna(0, inplace=True)
-
-
 # print(test.nunique())
 
 #usuniecie konkretnych kolumn
 test.drop(labels = ["Unnamed: 0","id", "Gate location" ], axis = 1, inplace=True)
 train.drop(labels = ["Unnamed: 0","id",  "Gate location"], axis = 1,inplace=True)
-
 
 #kodowanie tekstu na liczby unikalne całkowite
 label_encoder_gender = LabelEncoder()
@@ -65,37 +60,37 @@ label_encoder_satisfaction = LabelEncoder()
 train['satisfaction'] = label_encoder_satisfaction.fit_transform(train['satisfaction'])
 test['satisfaction'] = label_encoder_satisfaction.transform(test['satisfaction'])
 
-
 print(test.head())
 print(train.head())
 
+#usuniecie kolumny sat
 X_train = train.drop(['satisfaction'], axis=1)
+X_test = test.drop(['satisfaction'], axis=1)
+#zmienna docelowa
 y_train = train['satisfaction']
 
-X_test = test
-
-scaler = StandardScaler()
-X_train[['Age', 'Flight Distance', 'Departure Delay in Minutes', 'Arrival Delay in Minutes']] = scaler.fit_transform(X_train[['Age', 'Flight Distance', 'Departure Delay in Minutes', 'Arrival Delay in Minutes']])
-X_test[['Age', 'Flight Distance', 'Departure Delay in Minutes', 'Arrival Delay in Minutes']] = scaler.transform(X_test[['Age', 'Flight Distance', 'Departure Delay in Minutes', 'Arrival Delay in Minutes']])
-
+# scaler = StandardScaler()
+# X_train = scaler.fit_transform(X_train)
+# X_test = scaler.transform(X_test)
 
 model = keras.models.Sequential()
-model.add(keras.layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)))
+# warstwy geste
+model.add(keras.layers.Input(shape=(X_train.shape[1],)))
+model.add(keras.layers.Dense(128, activation='relu'))
 model.add(keras.layers.Dense(64, activation='relu'))
-model.add(keras.layers.Dense(2, activation='softmax'))
+model.add(keras.layers.Dense(1, activation='sigmoid'))
 
-model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
 
-model.fit(X_train, y_train, epochs=10, validation_split=0.2)
+#kompilacja modelu, optymalizator Adam
+model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+#trenowanie modelu
+model.fit(X_train , y_train, epochs=25)
 
-# model.save("my_model.h5")
+model.save("my_model.h5")
 
-# loaded_model = keras.models.load_model("my_model.h5")
+loaded_model = keras.models.load_model("my_model.h5")
 
 # X_test = test.drop(['id', 'satisfaction'], axis=1)
 # X_test[['Age', 'Flight Distance', 'Departure Delay in Minutes', 'Arrival Delay in Minutes']] = scaler.transform(X_test[['Age', 'Flight Distance', 'Departure Delay in Minutes', 'Arrival Delay in Minutes']])
 
 # predictions = loaded_model.predict(X_test)
-
-
-
