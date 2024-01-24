@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
-import time
-import pickle
 from matplotlib import pyplot as plt
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import tensorflow as tf
 from tensorflow import keras
@@ -25,14 +22,18 @@ if gpus:
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 
-#wypelnienie pustych rekordow zerami
-train["Arrival Delay in Minutes"].fillna(0, inplace=True) 
-test["Arrival Delay in Minutes"].fillna(0, inplace=True)
-# print(test.nunique())
+df= pd.concat([train, test], ignore_index=True)
+
+#srednia wartosc
+avg_delay = df['Arrival Delay in Minutes'].mean()
+
+#wypelnienie pustych rekordow srednia wartoscia 
+train["Arrival Delay in Minutes"].fillna(avg_delay, inplace=True) 
+test["Arrival Delay in Minutes"].fillna(avg_delay, inplace=True)
 
 #usuniecie konkretnych kolumn
-test.drop(labels = ["Unnamed: 0","id", "Gate location" ], axis = 1, inplace=True)
-train.drop(labels = ["Unnamed: 0","id",  "Gate location"], axis = 1,inplace=True)
+test.drop(labels = ["Unnamed: 0","id",  ], axis = 1, inplace=True)
+train.drop(labels = ["Unnamed: 0","id", ], axis = 1,inplace=True)
 
 #kodowanie tekstu na liczby unikalne całkowite
 label_encoder_gender = LabelEncoder()
@@ -60,37 +61,38 @@ label_encoder_satisfaction = LabelEncoder()
 train['satisfaction'] = label_encoder_satisfaction.fit_transform(train['satisfaction'])
 test['satisfaction'] = label_encoder_satisfaction.transform(test['satisfaction'])
 
-print(test.head())
 print(train.head())
+# print(test.head())
+# print(train.head())
 
 #usuniecie kolumny sat
 X_train = train.drop(['satisfaction'], axis=1)
 X_test = test.drop(['satisfaction'], axis=1)
-#zmienna docelowa
+
+#docelowy 
 y_train = train['satisfaction']
 
-# scaler = StandardScaler()
-# X_train = scaler.fit_transform(X_train)
-# X_test = scaler.transform(X_test)
+# standaryzacja danych, spojnosc
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
 model = keras.models.Sequential()
 # warstwy geste
 model.add(keras.layers.Input(shape=(X_train.shape[1],)))
+model.add(keras.layers.Dense(256, activation='relu'))
 model.add(keras.layers.Dense(128, activation='relu'))
 model.add(keras.layers.Dense(64, activation='relu'))
+model.add(keras.layers.Dense(32, activation='relu'))
+model.add(keras.layers.Dense(16, activation='relu'))
 model.add(keras.layers.Dense(1, activation='sigmoid'))
 
 
 #kompilacja modelu, optymalizator Adam
 model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
 #trenowanie modelu
-model.fit(X_train , y_train, epochs=25)
+model.fit(X_train , y_train, epochs=30)
 
-model.save("my_model.h5")
-
-loaded_model = keras.models.load_model("my_model.h5")
-
-# X_test = test.drop(['id', 'satisfaction'], axis=1)
-# X_test[['Age', 'Flight Distance', 'Departure Delay in Minutes', 'Arrival Delay in Minutes']] = scaler.transform(X_test[['Age', 'Flight Distance', 'Departure Delay in Minutes', 'Arrival Delay in Minutes']])
-
-# predictions = loaded_model.predict(X_test)
+#zapisywanie modelu
+model.save("my_model.keras")
+loaded_model = keras.models.load_model("my_model.keras")
