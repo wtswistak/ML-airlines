@@ -1,12 +1,8 @@
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import tensorflow as tf
 from tensorflow import keras
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-from keras.callbacks import CSVLogger
 
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -131,8 +127,6 @@ model.add(keras.layers.Dense(1, activation='sigmoid'))
 
 log_file_path = 'training_logs.csv'
 
-# Definiujemy callback CSVLogger
-csv_logger = CSVLogger(log_file_path)
 
 #kompilacja modelu, optymalizator Adam
 model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy', keras.metrics.Precision()])
