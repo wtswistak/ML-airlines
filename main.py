@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow import keras
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from keras.callbacks import CSVLogger
 
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -71,6 +72,7 @@ X_test = test.drop(['satisfaction'], axis=1)
 
 #docelowy 
 y_train = train['satisfaction']
+y_test = test['satisfaction']
 
 # standaryzacja danych, spojnosc
 scaler = StandardScaler()
@@ -78,20 +80,78 @@ X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 model = keras.models.Sequential()
-# warstwy geste
 model.add(keras.layers.Input(shape=(X_train.shape[1],)))
-model.add(keras.layers.Dense(256, activation='relu'))
-model.add(keras.layers.Dense(128, activation='relu'))
-model.add(keras.layers.Dense(64, activation='relu'))
-model.add(keras.layers.Dense(32, activation='relu'))
-model.add(keras.layers.Dense(16, activation='relu'))
+model.add(keras.layers.Dense(256, activation='elu'))
+model.add(keras.layers.Dense(128, activation='elu'))
+model.add(keras.layers.Dense(64, activation='elu'))
+model.add(keras.layers.Dense(32, activation='elu'))
+model.add(keras.layers.Dense(16, activation='elu'))
 model.add(keras.layers.Dense(1, activation='sigmoid'))
 
+# model = keras.models.Sequential()
+# model.add(keras.layers.Input(shape=(X_train.shape[1],)))
+# model.add(keras.layers.Dense(256, activation='relu'))
+# model.add(keras.layers.BatchNormalization())
+# model.add(keras.layers.Dense(128, activation='relu'))
+# model.add(keras.layers.BatchNormalization())
+# model.add(keras.layers.Dense(64, activation='relu'))
+# model.add(keras.layers.BatchNormalization())
+# model.add(keras.layers.Dense(32, activation='relu'))
+# model.add(keras.layers.BatchNormalization())
+# model.add(keras.layers.Dense(16, activation='relu'))
+# model.add(keras.layers.BatchNormalization())
+# model.add(keras.layers.Dense(1, activation='sigmoid'))
+
+# model = keras.models.Sequential()
+# model.add(keras.layers.Input(shape=(X_train.shape[1],)))
+# model.add(keras.layers.Dense(256, activation='relu'))
+# model.add(keras.layers.Dropout(0.5))
+# model.add(keras.layers.Dense(128, activation='relu'))
+# model.add(keras.layers.Dropout(0.5))
+# model.add(keras.layers.Dense(64, activation='relu'))
+# model.add(keras.layers.Dropout(0.5))
+# model.add(keras.layers.Dense(32, activation='relu'))
+# model.add(keras.layers.Dropout(0.5))
+# model.add(keras.layers.Dense(16, activation='relu'))
+# model.add(keras.layers.Dropout(0.5))
+# model.add(keras.layers.Dense(1, activation='sigmoid'))
+
+# model = keras.models.Sequential()
+# model.add(keras.layers.Input(shape=(X_train.shape[1],)))
+# model.add(keras.layers.Dense(128, activation='relu'))
+# model.add(keras.layers.Dense(1, activation='sigmoid'))
+
+# model.add(keras.layers.Input(shape=(X_train.shape[1],)))
+# model.add(keras.layers.Dense(256, activation='relu'))
+# model.add(keras.layers.Dense(128, activation='relu'))
+# model.add(keras.layers.Dense(64, activation='relu'))
+# model.add(keras.layers.Dense(32, activation='relu'))
+# model.add(keras.layers.Dense(16, activation='relu'))
+# model.add(keras.layers.Dense(1, activation='sigmoid'))
+
+log_file_path = 'training_logs.csv'
+
+# Definiujemy callback CSVLogger
+csv_logger = CSVLogger(log_file_path)
 
 #kompilacja modelu, optymalizator Adam
-model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy', keras.metrics.Precision()])
 #trenowanie modelu
-model.fit(X_train , y_train, epochs=30)
+history = model.fit(X_train, y_train, epochs=20, validation_data=(X_test, y_test))
+
+# plt.plot(history.history['accuracy'], label='Train Accuracy')
+# plt.plot(history.history['val_accuracy'], label='Test Accuracy')
+# plt.xlabel('Epoch')
+# plt.ylabel('Accuracy')
+# plt.legend()
+# plt.show()
+
+# plt.plot(history.history['precision'], label='Train Precision')
+# plt.plot(history.history['val_precision'], label='Test Precision')
+# plt.xlabel('Epoch')
+# plt.ylabel('Precision')
+# plt.legend()
+# plt.show()
 
 #zapisywanie modelu
 model.save("my_model.keras")
